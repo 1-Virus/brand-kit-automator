@@ -1,0 +1,383 @@
+{
+  "name": "AI Brand Architect",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "AI Brand Architect",
+        "formDescription": "Tell us about your business, and our AI will build your brand kit instantly.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Business Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Industry",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Please enter your Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Brand Vibe",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Minimalist"
+                  },
+                  {
+                    "option": "Futuristic"
+                  },
+                  {
+                    "option": "Bold & Modern"
+                  },
+                  {
+                    "option": "Vintage"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f3f7cf2a-0528-4629-bf3f-90d8e8cd891b",
+      "name": "On form submission",
+      "webhookId": "cf12ab17-3a40-4351-85e8-a62547e81f08"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a tagline for {{ $json['Business Name'] }} the {{ $json.Industry }} industry.",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "You are a professional branding expert. Based on the user's input, create a catchy 5-word tagline and a detailed logo prompt for an image generator. Output only in raw JSON format."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        320,
+        0
+      ],
+      "id": "b0777b2f-142a-45a0-8131-1837a2c04226",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        320,
+        176
+      ],
+      "id": "f4c79f3a-ebf3-409c-9290-24a7abf448c8",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "fEYJ4RamxXlvx1Mt",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the 'text' string from the previous node\nconst rawText = $input.first().json.text;\n\n// 2. Parse it into a real JSON object\nconst parsedData = JSON.parse(rawText);\n\n// 3. Return it so n8n can see the individual fields\nreturn [{ json: parsedData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "f90422aa-a425-4c7d-8275-f0c50ccb3c73",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "huggingFaceApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "image/png"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "inputs",
+              "value": "={{ $('Basic LLM Chain').item.json.text }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        0
+      ],
+      "id": "ff365f84-6d93-401f-a2e5-a866dff11878",
+      "name": "HTTP Request",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "IQKpVk7iTwKyGBnp",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "=Logo_{{ $('On form submission').item.json['Business Name'] }}.png",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1Y5uIWoLlt7-KoC6WcATgBM2ODsWbgQZ3",
+          "mode": "list",
+          "cachedResultName": "Google AI Studio",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Y5uIWoLlt7-KoC6WcATgBM2ODsWbgQZ3"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1088,
+        0
+      ],
+      "id": "6e63796f-9542-4e03-ac1e-12aa86d23382",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2aqn7N5GB1bKw93A",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "91430777-104e-41c6-b826-bbfb014cbb0a",
+      "name": "Share file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2aqn7N5GB1bKw93A",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Upload file').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "fields": [
+            "webViewLink"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1504,
+        0
+      ],
+      "id": "dd30bf63-bab8-424e-92c0-3c1c91e099f9",
+      "name": "Update file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2aqn7N5GB1bKw93A",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['Please enter your Email'] }}",
+        "subject": "=Your Brand Kit: {{ $('On form submission').item.json['Business Name'] }}",
+        "message": "=<h2>Your AI Brand Kit is Ready!</h2> <p>Hello! We've finished designing the assets for <b>{{ $('On form submission').item.json['Business Name'] }}</b>.</p>  <p><b>Your Strategy:</b><br> {{ $('Code in JavaScript').item.json.tagline }}</p>  <p><b>Your Logo:</b><br> <a href=\"{{ $json.webViewLink }}\">Download high-res version from Google Drive</a></p>  <p><i>Note: We have also attached the logo file directly to this email.</i></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        0
+      ],
+      "id": "3967750c-5913-459e-9ba2-85c4c76ce5ab",
+      "name": "Send a message",
+      "webhookId": "879f4e8f-58d5-4654-a777-98b6fc6b1985",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0DjOKfRnfzcwdyKo",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Share file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file": {
+      "main": [
+        [
+          {
+            "node": "Update file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update file": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b7c9e0b6-31ab-434f-b282-5581a9069e03",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48c9b1791f8d493e8a71049e6ba05f7889fa1c2d61047518307757e06aeafff0"
+  },
+  "id": "A1OvlvccLW473VfX",
+  "tags": []
+}
