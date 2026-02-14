@@ -3,7 +3,7 @@ An automated pipeline built in n8n that generates custom business taglines and l
 
 
 How It Works
-1. **The Trigger: **A user submits their Business Name and Email via an **n8n Form**.
+1. **The Trigger:**A user submits their Business Name and Email via an **n8n Form**.
 2. **Creative Logic:**
    - **Tagline:** The AI generates a punchy, niche-specific tagline.
    - **Logo:** An AI image model creates a visual representation of the brand.
